@@ -8,7 +8,7 @@ import (
 
 func init() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal(err.Error())
+		log.Panic(err.Error())
 	}
 }
 

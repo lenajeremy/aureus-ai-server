@@ -1,8 +1,8 @@
 package database
 
 import (
-	"code-review/auth"
 	cfg "code-review/config"
+	"code-review/globals"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,7 +14,6 @@ type DBConnectConfig struct {
 }
 
 func ConnectToDB(config ...DBConnectConfig) {
-
 	var (
 		DbHost = cfg.GetEnv("DB_HOST")
 		DbPass = cfg.GetEnv("DB_PASS")
@@ -28,10 +27,10 @@ func ConnectToDB(config ...DBConnectConfig) {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s port=%s dbname=%s sslmode=disable", DbHost, DbUser, DbPass, DbPort, DbName)
 	pg := postgres.Open(dsn)
 
-	db, err = gorm.Open(pg)
+	DB, err = gorm.Open(pg)
 
 	if err != nil {
-		log.Fatalf("Failed to connect to database. Reason: %s", err.Error())
+		log.Panicf("Failed to connect to database. Reason: %s", err.Error())
 	} else {
 		log.Println("Successfully connected to database")
 	}
@@ -47,11 +46,12 @@ func ConnectToDB(config ...DBConnectConfig) {
 	}
 
 	if dbConCfg.MakeMigrations {
-		err = db.AutoMigrate(
-			&auth.Account{}, auth.Session{}, auth.User{}, auth.VerificationToken{},
+		err = DB.AutoMigrate(
+			// auth.User{},
+			globals.LoginInitSession{},
 		)
 		if err != nil {
-			log.Fatalf("Failed to make migrations. Reason: %s", err.Error())
+			log.Panicf("Failed to make migrations. Reason: %s", err.Error())
 		} else {
 			log.Println("DB migrations completed")
 		}

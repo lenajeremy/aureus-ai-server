@@ -6,8 +6,8 @@ import (
 )
 
 var routes = []structs.AppRoute{
-	{"/login", fiber.MethodGet, Login},
-	{"/register", fiber.MethodGet, Register},
+	{"/github/initiate", fiber.MethodGet, InitiateGHLogin},
+	{"/github/callback", fiber.MethodGet, GHLoginCallback},
 }
 
 var RouteConfig = structs.RouteConfig{

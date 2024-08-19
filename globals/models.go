@@ -17,3 +17,9 @@ func (t *BaseModel) BeforeCreate(tx *gorm.DB) error {
 	t.ID = uuid.New()
 	return nil
 }
+
+type LoginInitSession struct {
+	BaseModel
+	Identifier string `gorm:"identifier;not null"`
+	Hash       string `gorm:"hash;not null;unique"`
+}
