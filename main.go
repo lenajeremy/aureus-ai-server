@@ -4,6 +4,7 @@ import (
 	"code-review/auth"
 	"code-review/database"
 	"code-review/github"
+	"code-review/globals"
 	"code-review/structs"
 	"code-review/utils"
 	"github.com/gofiber/fiber/v2"
@@ -20,6 +21,10 @@ func main() {
 	app.Use(fRecover.New())
 
 	database.ConnectToDB()
+
+	if err := database.DB.AutoMigrate(auth.User{}, globals.BaseModel{}, github.Token{}, globals.LoginInitSession{}); err != nil {
+		log.Fatalf(err.Error())
+	}
 
 	utils.SetupRoutes(app, []structs.RouteConfig{
 		auth.RouteConfig,

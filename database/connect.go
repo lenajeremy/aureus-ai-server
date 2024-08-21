@@ -2,7 +2,6 @@ package database
 
 import (
 	cfg "code-review/config"
-	"code-review/globals"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -35,26 +34,27 @@ func ConnectToDB(config ...DBConnectConfig) {
 		log.Println("Successfully connected to database")
 	}
 
-	var dbConCfg DBConnectConfig
-
-	if len(config) == 0 {
-		dbConCfg = DBConnectConfig{
-			MakeMigrations: true,
-		}
-	} else {
-		dbConCfg = config[0]
-	}
-
-	if dbConCfg.MakeMigrations {
-		err = DB.AutoMigrate(
-			// auth.User{},
-			globals.LoginInitSession{},
-		)
-		if err != nil {
-			log.Panicf("Failed to make migrations. Reason: %s", err.Error())
-		} else {
-			log.Println("DB migrations completed")
-		}
-	}
+	//var dbConCfg DBConnectConfig
+	//
+	//if len(config) == 0 {
+	//	dbConCfg = DBConnectConfig{
+	//		MakeMigrations: true,
+	//	}
+	//} else {
+	//	dbConCfg = config[0]
+	//}
+	//
+	//if dbConCfg.MakeMigrations {
+	//	err = DB.AutoMigrate(
+	//		//auth.User{},
+	//		globals.LoginInitSession{},
+	//		github.Token{},
+	//	)
+	//	if err != nil {
+	//		log.Panicf("Failed to make migrations. Reason: %s", err.Error())
+	//	} else {
+	//		log.Println("DB migrations completed")
+	//	}
+	//}
 
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"log"
+	"time"
 )
 
 func InitiateGHLogin(c *fiber.Ctx) error {
@@ -21,7 +22,6 @@ func InitiateGHLogin(c *fiber.Ctx) error {
 
 	// generate state hash and save to db
 	ghLoginStateHash := utils.Encrypt(sessId)
-	log.Println(ghLoginStateHash, sessId)
 	err := database.DB.Create(&globals.LoginInitSession{Hash: ghLoginStateHash, Identifier: sessId}).Error
 
 	if err != nil {
@@ -48,6 +48,11 @@ func GHLoginCallback(c *fiber.Ctx) error {
 	var loginSessState globals.LoginInitSession
 
 	err := database.DB.First(&loginSessState, "identifier = ? and hash = ?", ghStateIdentifier, ghStateHash).Error
+	defer func() {
+		if err := database.DB.Delete(&loginSessState).Error; err != nil {
+			log.Println(err.Error())
+		}
+	}()
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -57,17 +62,33 @@ func GHLoginCallback(c *fiber.Ctx) error {
 		}
 	}
 
+	// get token from code
 	token, err := github.ExchangeCodeForToken(code)
-
-	cookie := fiber.Cookie{
-		Name:     "TOKEN",
-		Value:    token,
-		Secure:   false,
-		HTTPOnly: false,
-		SameSite: "none",
+	if err != nil {
+		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
 	}
 
-	c.Cookie(&cookie)
+	// get user details from using token and
+	user, err := github.GetUserDetails(token.AccessToken, "")
+	if err != nil {
+		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
+	}
 
-	return c.Redirect(fmt.Sprintf("http://localhost:3000?token=%s", token))
+	// save user to database
+	dbUser := User{
+		Name:          *user.Name,
+		Email:         *user.Email,
+		EmailVerified: time.Now(),
+		Image:         *user.AvatarURL,
+		GithubToken:   token,
+	}
+	if err := database.DB.Create(&dbUser).Error; err != nil {
+		log.Println(err.Error())
+		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
+	}
+
+	log.Printf("Saved user with username \"%s\" to DB", *user.Login)
+
+	// generate jwt token
+	return c.Redirect(fmt.Sprintf("http://localhost:3000?%s", dbUser.Name))
 }
