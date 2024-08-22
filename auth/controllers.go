@@ -82,13 +82,15 @@ func GHLoginCallback(c *fiber.Ctx) error {
 		Image:         *user.AvatarURL,
 		GithubToken:   token,
 	}
-	if err := database.DB.Create(&dbUser).Error; err != nil {
+
+	if err := database.DB.FirstOrCreate(&dbUser).Error; err != nil {
 		log.Println(err.Error())
 		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
 	}
 
-	log.Printf("Saved user with username \"%s\" to DB", *user.Login)
-
+	log.Println(dbUser.ID)
 	// generate jwt token
-	return c.Redirect(fmt.Sprintf("http://localhost:3000?%s", dbUser.Name))
+	jwtToken := GenerateToken(dbUser.ID.String(), dbUser.Email)
+
+	return c.Redirect(fmt.Sprintf("http://localhost:3000?token=%s", jwtToken))
 }

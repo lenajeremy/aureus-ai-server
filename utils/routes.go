@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"code-review/middleware"
 	"code-review/structs"
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,6 +14,10 @@ func SetupRoute(app *fiber.App, config structs.RouteConfig) {
 	for _, route := range config.Routes {
 		requestMethod := getRequestMethod(router, route.Method)
 		requestMethod(route.Path, route.Handler)
+	}
+
+	if config.RequiresAuth {
+		router.Use(middleware.Protected())
 	}
 }
 

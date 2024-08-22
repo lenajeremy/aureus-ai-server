@@ -11,7 +11,7 @@ var RouteConfig = structs.RouteConfig{
 	Middleware:   make([]fiber.Handler, 0),
 
 	Routes: []structs.AppRoute{
-		{"/pr", fiber.MethodGet, HandlePullRequests},
-		{"/issues", fiber.MethodGet, HandleIssues},
+		{Path: "/pr", Method: fiber.MethodGet, Handler: HandlePullRequests},
+		{Path: "/issues", Method: fiber.MethodGet, Handler: HandleIssues},
 	},
 }

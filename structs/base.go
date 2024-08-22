@@ -11,6 +11,6 @@ type AppRoute struct {
 type RouteConfig struct {
 	BaseURL      string
 	Routes       []AppRoute
-	RequiresAuth bool
 	Middleware   []fiber.Handler
+	RequiresAuth bool
 }

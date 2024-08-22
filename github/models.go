@@ -6,8 +6,8 @@ import (
 )
 
 type PRWebhookPayload struct {
-	code          string
-	affectedFiles []string
+	Code          string
+	AffectedFiles []string
 }
 
 type Token struct {

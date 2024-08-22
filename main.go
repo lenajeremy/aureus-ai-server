@@ -22,7 +22,7 @@ func main() {
 
 	database.ConnectToDB()
 
-	if err := database.DB.AutoMigrate(auth.User{}, globals.BaseModel{}, github.Token{}, globals.LoginInitSession{}); err != nil {
+	if err := database.DB.AutoMigrate(auth.User{}, github.Token{}, globals.LoginInitSession{}); err != nil {
 		log.Fatalf(err.Error())
 	}
 
