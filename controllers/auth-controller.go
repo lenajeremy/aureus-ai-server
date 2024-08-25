@@ -10,18 +10,41 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"log"
+	"net/url"
 	"time"
 )
 
 func InitiateGHLogin(c *fiber.Ctx) error {
 	sessId := c.Query("identifier")
+	onSuccessCallback := c.Query("onSuccessCallback")
+	onErrorCallback := c.Query("onErrorCallback")
+
+	var successCallback, errorCallback url.URL
+
 	if sessId == "" {
 		return utils.RespondError(c, fiber.StatusBadRequest, errors.New("invalid session identifier"))
 	}
 
+	// verify the validity of success and error callback urls
+	if sCallback, err := url.Parse(onSuccessCallback); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err)
+	} else {
+		successCallback = *sCallback
+	}
+	if errCallback, err := url.Parse(onErrorCallback); err != nil {
+		return utils.RespondError(c, fiber.StatusBadRequest, err)
+	} else {
+		errorCallback = *errCallback
+	}
+
 	// generate state hash and save to db
 	ghLoginStateHash := utils.Encrypt(sessId)
-	err := database.DB.Create(&models.LoginInitSession{Hash: ghLoginStateHash, Identifier: sessId}).Error
+	err := database.DB.Create(&models.LoginInitSession{
+		Hash:       ghLoginStateHash,
+		Identifier: sessId,
+		OnSuccess:  successCallback.String(),
+		OnError:    errorCallback.String(),
+	}).Error
 
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, err)
@@ -42,11 +65,13 @@ func InitiateGHLogin(c *fiber.Ctx) error {
 func GHLoginCallback(c *fiber.Ctx) error {
 	code := c.Query("code")
 	ghStateHash := c.Query("state")
+
 	ghStateIdentifier := utils.Decrypt(ghStateHash)
 
 	var loginSessState models.LoginInitSession
 
 	err := database.DB.First(&loginSessState, "identifier = ? and hash = ?", ghStateIdentifier, ghStateHash).Error
+	// delete the login session after the user has logged in successfully
 	defer func() {
 		if err := database.DB.Delete(&loginSessState).Error; err != nil {
 			log.Println(err.Error())
@@ -64,13 +89,13 @@ func GHLoginCallback(c *fiber.Ctx) error {
 	// get token from code
 	token, err := utils.ExchangeCodeForToken(code)
 	if err != nil {
-		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
+		return c.Redirect(fmt.Sprintf("%ss?error=%s", loginSessState.OnError, err.Error()))
 	}
 
 	// get user details from using token and
 	user, err := utils.GetUserDetails(token.AccessToken, "")
 	if err != nil {
-		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
+		return c.Redirect(fmt.Sprintf("%ss?error=%s", loginSessState.OnError, err.Error()))
 	}
 
 	// save user to database
@@ -84,12 +109,11 @@ func GHLoginCallback(c *fiber.Ctx) error {
 
 	if err := database.DB.FirstOrCreate(&dbUser).Error; err != nil {
 		log.Println(err.Error())
-		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
+		return c.Redirect(fmt.Sprintf("%ss?error=%s", loginSessState.OnError, err.Error()))
 	}
 
-	log.Println(dbUser.ID)
 	// generate jwt token
 	jwtToken := utils.GenerateToken(dbUser.ID.String(), dbUser.Email)
 
-	return c.Redirect(fmt.Sprintf("http://localhost:3000?token=%s", jwtToken))
+	return c.Redirect(fmt.Sprintf("%s?token=%s", loginSessState.OnSuccess, jwtToken))
 }

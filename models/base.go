@@ -22,4 +22,6 @@ type LoginInitSession struct {
 	BaseModel
 	Identifier string `gorm:"identifier;not null"`
 	Hash       string `gorm:"hash;not null;unique"`
+	OnSuccess  string `gorm:"success_callback_url;not null;default=http://localhost:3000"`
+	OnError    string `gorm:"error_callback_url;not null;default=http://localhost:3000"`
 }

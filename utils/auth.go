@@ -14,9 +14,7 @@ func GenerateToken(id, email string) string {
 	claims["email"] = email
 	claims["exp"] = time.Now().Add(time.Hour * 24)
 
-	token, err := j.SignedString(config.GetEnv("JWT_SECRET"))
-
-	log.Println(token, err)
+	token, err := j.SignedString([]byte(config.GetEnv("JWT_SECRET")))
 
 	if err != nil {
 		log.Println(err.Error())
