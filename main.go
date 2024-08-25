@@ -13,6 +13,7 @@ import (
 
 func main() {
 	app := fiber.New()
+
 	app.Use(cors.New())
 	app.Use(logger.New())
 	app.Use(fRecover.New())

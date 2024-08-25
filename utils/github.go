@@ -173,3 +173,23 @@ func GetUserDetails(token, username string) (github.User, error) {
 
 	return *user, err
 }
+
+func GetUserRepos(token string) ([]*github.Repository, error) {
+	client := prepareClientWithToken(token)
+
+	var repos []*github.Repository
+	var err error
+
+	var repoOptions = new(github.RepositoryListByAuthenticatedUserOptions)
+	repoOptions.Visibility = "all"
+	repoOptions.Direction = "desc"
+	repoOptions.Sort = "updated"
+
+	repos, _, err = client.Repositories.ListByAuthenticatedUser(context.Background(), repoOptions)
+
+	if err != nil {
+		return repos, err
+	}
+
+	return repos, err
+}

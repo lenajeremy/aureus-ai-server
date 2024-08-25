@@ -10,13 +10,13 @@ type RouteFunctionMethod = func(path string, handlers ...fiber.Handler) fiber.Ro
 func SetupRoute(app *fiber.App, config RouteConfig) {
 	router := app.Group(config.BaseURL)
 
-	for _, route := range config.Routes {
-		requestMethod := getRequestMethod(router, route.Method)
-		requestMethod(route.Path, route.Handler)
-	}
-
 	if config.RequiresAuth {
 		router.Use(middleware.Protected())
+	}
+
+	for _, route := range config.Routes {
+		requestMethod := getRequestMethod(&router, route.Method)
+		requestMethod(route.Path, route.Handler)
 	}
 }
 
@@ -26,27 +26,27 @@ func SetupRoutes(app *fiber.App, routeConfigs []RouteConfig) {
 	}
 }
 
-func getRequestMethod(router fiber.Router, method string) RouteFunctionMethod {
+func getRequestMethod(router *fiber.Router, method string) RouteFunctionMethod {
 	switch method {
 	case fiber.MethodGet:
-		return router.Get
+		return (*router).Get
 	case fiber.MethodPost:
-		return router.Post
+		return (*router).Post
 	case fiber.MethodPut:
-		return router.Put
+		return (*router).Put
 	case fiber.MethodDelete:
-		return router.Delete
+		return (*router).Delete
 	case fiber.MethodHead:
-		return router.Head
+		return (*router).Head
 	case fiber.MethodOptions:
-		return router.Options
+		return (*router).Options
 	case fiber.MethodPatch:
-		return router.Patch
+		return (*router).Patch
 	case fiber.MethodConnect:
-		return router.Connect
+		return (*router).Connect
 	case fiber.MethodTrace:
-		return router.Trace
+		return (*router).Trace
 	default:
-		return router.Get
+		return (*router).Get
 	}
 }
