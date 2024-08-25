@@ -1,14 +1,13 @@
-package utils
+package routes
 
 import (
 	"code-review/middleware"
-	"code-review/structs"
 	"github.com/gofiber/fiber/v2"
 )
 
 type RouteFunctionMethod = func(path string, handlers ...fiber.Handler) fiber.Router
 
-func SetupRoute(app *fiber.App, config structs.RouteConfig) {
+func SetupRoute(app *fiber.App, config RouteConfig) {
 	router := app.Group(config.BaseURL)
 
 	for _, route := range config.Routes {
@@ -21,7 +20,7 @@ func SetupRoute(app *fiber.App, config structs.RouteConfig) {
 	}
 }
 
-func SetupRoutes(app *fiber.App, routeConfigs []structs.RouteConfig) {
+func SetupRoutes(app *fiber.App, routeConfigs []RouteConfig) {
 	for _, config := range routeConfigs {
 		SetupRoute(app, config)
 	}

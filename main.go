@@ -1,12 +1,9 @@
 package main
 
 import (
-	"code-review/auth"
 	"code-review/database"
-	"code-review/github"
-	"code-review/globals"
-	"code-review/structs"
-	"code-review/utils"
+	"code-review/models"
+	"code-review/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -20,15 +17,23 @@ func main() {
 	app.Use(logger.New())
 	app.Use(fRecover.New())
 
-	database.ConnectToDB()
-
-	if err := database.DB.AutoMigrate(auth.User{}, github.Token{}, globals.LoginInitSession{}); err != nil {
-		log.Fatalf(err.Error())
+	// set up database configurations
+	databaseConfig := new(database.DBConnectConfig)
+	databaseConfig.MigrationModels = []any{
+		&models.User{},
+		&models.GHToken{},
+		&models.LoginInitSession{},
 	}
 
-	utils.SetupRoutes(app, []structs.RouteConfig{
-		auth.RouteConfig,
-		github.RouteConfig,
+	databaseConfig.MakeMigrations = true
+
+	// connect to database
+	database.ConnectToDB(databaseConfig)
+
+	// setup routes for services
+	routes.SetupRoutes(app, []routes.RouteConfig{
+		routes.GHRouteConfig,
+		routes.AuthRouteConfig,
 	})
 
 	log.Panic(app.Listen(":8080"))

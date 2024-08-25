@@ -1,9 +1,10 @@
-package github
+package utils
 
 import (
 	"bytes"
 	"code-review/config"
 	"code-review/database"
+	"code-review/models"
 	"context"
 	"fmt"
 	"github.com/google/go-github/v63/github"
@@ -19,7 +20,7 @@ func prepareClientWithToken(token string) *github.Client {
 	return github.NewClient(nil).WithAuthToken(token)
 }
 
-func ExchangeCodeForToken(code string) (Token, error) {
+func ExchangeCodeForToken(code string) (models.GHToken, error) {
 	clientId := config.GetEnv("GITHUB_CLIENT_ID")
 	clientSecret := config.GetEnv("GITHUB_CLIENT_SECRET")
 	githubTokenURL := fmt.Sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&code=%s", clientId, clientSecret, code)
@@ -47,7 +48,7 @@ func ExchangeCodeForToken(code string) (Token, error) {
 		log.Println("Error response. Status Code: ", resp.StatusCode)
 	}
 
-	var githubToken Token
+	var githubToken models.GHToken
 
 	for _, kv := range strings.Split(string(responseBody), "&") {
 		key := strings.Split(kv, "=")[0]
@@ -76,9 +77,9 @@ func ExchangeCodeForToken(code string) (Token, error) {
 	return githubToken, err
 }
 
-func RefreshUserAccessToken(token string) (*Token, error) {
+func RefreshUserAccessToken(token string) (*models.GHToken, error) {
 
-	var githubToken Token
+	var githubToken models.GHToken
 
 	err := database.DB.Where(&githubToken, "access_token = ?", token).Error
 	if err != nil {

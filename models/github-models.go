@@ -1,7 +1,6 @@
-package github
+package models
 
 import (
-	"code-review/globals"
 	"time"
 )
 
@@ -10,8 +9,8 @@ type PRWebhookPayload struct {
 	AffectedFiles []string
 }
 
-type Token struct {
-	globals.BaseModel
+type GHToken struct {
+	BaseModel
 	UserId                string    `gorm:"user_id"`
 	AccessToken           string    `gorm:"access_token"`
 	AccessTokenExpiresIn  time.Time `gorm:"expires_in;not null"`

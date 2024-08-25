@@ -9,10 +9,11 @@ import (
 )
 
 type DBConnectConfig struct {
-	MakeMigrations bool
+	MakeMigrations  bool
+	MigrationModels []any
 }
 
-func ConnectToDB(config ...DBConnectConfig) {
+func ConnectToDB(config *DBConnectConfig) {
 	var (
 		DbHost = cfg.GetEnv("DB_HOST")
 		DbPass = cfg.GetEnv("DB_PASS")
@@ -34,27 +35,11 @@ func ConnectToDB(config ...DBConnectConfig) {
 		log.Println("Successfully connected to database")
 	}
 
-	//var dbConCfg DBConnectConfig
-	//
-	//if len(config) == 0 {
-	//	dbConCfg = DBConnectConfig{
-	//		MakeMigrations: true,
-	//	}
-	//} else {
-	//	dbConCfg = config[0]
-	//}
-	//
-	//if dbConCfg.MakeMigrations {
-	//	err = DB.AutoMigrate(
-	//		//auth.User{},
-	//		globals.LoginInitSession{},
-	//		github.Token{},
-	//	)
-	//	if err != nil {
-	//		log.Panicf("Failed to make migrations. Reason: %s", err.Error())
-	//	} else {
-	//		log.Println("DB migrations completed")
-	//	}
-	//}
+	if config != nil && config.MakeMigrations {
 
+		err := DB.AutoMigrate(config.MigrationModels...)
+		if err != nil {
+			log.Panicf(err.Error())
+		}
+	}
 }

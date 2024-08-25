@@ -1,10 +1,9 @@
-package auth
+package controllers
 
 import (
 	"code-review/config"
 	"code-review/database"
-	"code-review/github"
-	"code-review/globals"
+	"code-review/models"
 	"code-review/utils"
 	"errors"
 	"fmt"
@@ -22,7 +21,7 @@ func InitiateGHLogin(c *fiber.Ctx) error {
 
 	// generate state hash and save to db
 	ghLoginStateHash := utils.Encrypt(sessId)
-	err := database.DB.Create(&globals.LoginInitSession{Hash: ghLoginStateHash, Identifier: sessId}).Error
+	err := database.DB.Create(&models.LoginInitSession{Hash: ghLoginStateHash, Identifier: sessId}).Error
 
 	if err != nil {
 		return utils.RespondError(c, fiber.StatusInternalServerError, err)
@@ -45,7 +44,7 @@ func GHLoginCallback(c *fiber.Ctx) error {
 	ghStateHash := c.Query("state")
 	ghStateIdentifier := utils.Decrypt(ghStateHash)
 
-	var loginSessState globals.LoginInitSession
+	var loginSessState models.LoginInitSession
 
 	err := database.DB.First(&loginSessState, "identifier = ? and hash = ?", ghStateIdentifier, ghStateHash).Error
 	defer func() {
@@ -63,19 +62,19 @@ func GHLoginCallback(c *fiber.Ctx) error {
 	}
 
 	// get token from code
-	token, err := github.ExchangeCodeForToken(code)
+	token, err := utils.ExchangeCodeForToken(code)
 	if err != nil {
 		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
 	}
 
 	// get user details from using token and
-	user, err := github.GetUserDetails(token.AccessToken, "")
+	user, err := utils.GetUserDetails(token.AccessToken, "")
 	if err != nil {
 		return c.Redirect(fmt.Sprintf("http://localhost:3000/auth/error?error=%s", err.Error()))
 	}
 
 	// save user to database
-	dbUser := User{
+	dbUser := models.User{
 		Name:          *user.Name,
 		Email:         *user.Email,
 		EmailVerified: time.Now(),
@@ -90,7 +89,7 @@ func GHLoginCallback(c *fiber.Ctx) error {
 
 	log.Println(dbUser.ID)
 	// generate jwt token
-	jwtToken := GenerateToken(dbUser.ID.String(), dbUser.Email)
+	jwtToken := utils.GenerateToken(dbUser.ID.String(), dbUser.Email)
 
 	return c.Redirect(fmt.Sprintf("http://localhost:3000?token=%s", jwtToken))
 }
