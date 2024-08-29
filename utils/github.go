@@ -77,15 +77,9 @@ func ExchangeCodeForToken(code string) (models.GHToken, error) {
 	return githubToken, err
 }
 
-func RefreshUserAccessToken(token string) (*models.GHToken, error) {
+func RefreshUserAccessToken(githubToken models.GHToken) (models.GHToken, error) {
 
-	var githubToken models.GHToken
-
-	err := database.DB.Where(&githubToken, "access_token = ?", token).Error
-	if err != nil {
-		return nil, err
-	}
-
+	log.Println("get")
 	clientId := config.GetEnv("GITHUB_CLIENT_ID")
 	clientSecret := config.GetEnv("GITHUB_CLIENT_SECRET")
 	githubTokenURL := fmt.Sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&grant_type=refresh_token&refresh_token=%s", clientId, clientSecret, githubToken.RefreshToken)
@@ -137,11 +131,11 @@ func RefreshUserAccessToken(token string) (*models.GHToken, error) {
 		}
 	}
 
-	if err := database.DB.Save(&githubToken).Error; err != nil {
-		return nil, err
+	if err := database.DB.Save(githubToken).Error; err != nil {
+		return models.GHToken{}, err
 	}
 
-	return &githubToken, err
+	return githubToken, err
 }
 
 func GetUserDetails(token, username string) (github.User, error) {
@@ -186,7 +180,6 @@ func GetUserRepos(token string) ([]*github.Repository, error) {
 	repoOptions.Sort = "updated"
 
 	repos, _, err = client.Repositories.ListByAuthenticatedUser(context.Background(), repoOptions)
-
 	if err != nil {
 		return repos, err
 	}

@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"code-review/database"
 	"code-review/utils"
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	"log"
+	"time"
 )
 
 func HandlePullRequests(c *fiber.Ctx) error {
@@ -15,18 +17,30 @@ func HandlePullRequests(c *fiber.Ctx) error {
 
 func HandleIssues(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
-		"hello": "Handling issuessssss....",
+		"hello": "Handling issue....",
 	})
 }
 
 func GetUserRepos(c *fiber.Ctx) error {
 	user, err := utils.GetUserFromContext(c)
-
 	if err != nil {
-		return utils.RespondError(c, fiber.StatusUnauthorized, err)
+		return utils.RespondError(c, fiber.StatusInternalServerError, err)
 	}
 
-	log.Println(user)
+	if user.GithubToken.RefreshTokenExpiresIn.Before(time.Now()) {
+		newToken, err := utils.RefreshUserAccessToken(user.GithubToken)
+		if err != nil {
+			log.Println(err)
+			return utils.RespondError(c, fiber.StatusInternalServerError, err)
+		}
+
+		user.GithubToken = newToken
+
+		if err := database.DB.Save(&user).Error; err != nil {
+			log.Println(err)
+			return utils.RespondError(c, fiber.StatusInternalServerError, err)
+		}
+	}
 
 	repos, err := utils.GetUserRepos(user.GithubToken.AccessToken)
 
