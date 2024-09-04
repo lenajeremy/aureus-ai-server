@@ -2,21 +2,25 @@ package main
 
 import (
 	"code-review/database"
+	"code-review/logger"
 	"code-review/models"
 	"code-review/routes"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	fRecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"log"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	requestLogger "github.com/gofiber/fiber/v2/middleware/logger"
+	fRecover "github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 func main() {
 	app := fiber.New()
 
 	app.Use(cors.New())
-	app.Use(logger.New())
+	app.Use(requestLogger.New())
 	app.Use(fRecover.New())
+
+	// initialize logger
+	logger.InitLogger()
 
 	// set up database configurations
 	databaseConfig := new(database.DBConnectConfig)

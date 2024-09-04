@@ -29,6 +29,8 @@ func GetUserRepos(c *fiber.Ctx) error {
 
 	if user.GithubToken.RefreshTokenExpiresIn.Before(time.Now()) {
 		newToken, err := utils.RefreshUserAccessToken(user.GithubToken)
+		log.Println(newToken)
+
 		if err != nil {
 			log.Println(err)
 			return utils.RespondError(c, fiber.StatusInternalServerError, err)
@@ -41,6 +43,8 @@ func GetUserRepos(c *fiber.Ctx) error {
 			return utils.RespondError(c, fiber.StatusInternalServerError, err)
 		}
 	}
+
+	log.Println("token should have expired")
 
 	repos, err := utils.GetUserRepos(user.GithubToken.AccessToken)
 

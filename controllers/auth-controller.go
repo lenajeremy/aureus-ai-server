@@ -3,15 +3,17 @@ package controllers
 import (
 	"code-review/config"
 	"code-review/database"
+	"code-review/logger"
 	"code-review/models"
 	"code-review/utils"
 	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 	"log"
 	"net/url"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 func InitiateGHLogin(c *fiber.Ctx) error {
@@ -98,17 +100,35 @@ func GHLoginCallback(c *fiber.Ctx) error {
 		return c.Redirect(fmt.Sprintf("%ss?error=%s", loginSessState.OnError, err.Error()))
 	}
 
-	// save user to database
-	dbUser := models.User{
-		Name:          *user.Name,
-		Email:         *user.Email,
-		EmailVerified: time.Now(),
-		Image:         *user.AvatarURL,
-		GithubToken:   token,
-	}
+	var dbUser models.User
 
-	if err := database.DB.FirstOrCreate(&dbUser).Error; err != nil {
-		log.Println(err.Error())
+	err = database.DB.Transaction(func(tx *gorm.DB) error {
+
+		// save github token
+		if err := tx.Save(&token).Error; err != nil {
+			logger.Logger.Error(err)
+			return err
+		}
+
+		// save user to database
+		dbUser = models.User{
+			Name:          *user.Name,
+			Email:         *user.Email,
+			EmailVerified: time.Now(),
+			Image:         *user.AvatarURL,
+			GithubToken:   token,
+		}
+
+		if err := tx.FirstOrCreate(&user).Error; err != nil {
+			logger.Logger.Error(err)
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		logger.Logger.Error(err)
 		return c.Redirect(fmt.Sprintf("%ss?error=%s", loginSessState.OnError, err.Error()))
 	}
 
