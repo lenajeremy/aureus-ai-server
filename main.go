@@ -28,6 +28,8 @@ func main() {
 		&models.User{},
 		&models.GHToken{},
 		&models.LoginInitSession{},
+		&models.Account{},
+		&models.VerificationToken{},
 	}
 
 	databaseConfig.MakeMigrations = true

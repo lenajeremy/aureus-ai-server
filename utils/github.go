@@ -3,7 +3,7 @@ package utils
 import (
 	"bytes"
 	"code-review/config"
-	"code-review/database"
+	// "code-review/database"
 	"code-review/models"
 	"context"
 	"fmt"
@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 )
+
 
 func prepareClientWithToken(token string) *github.Client {
 	return github.NewClient(nil).WithAuthToken(token)
@@ -77,66 +78,65 @@ func ExchangeCodeForToken(code string) (models.GHToken, error) {
 	return githubToken, err
 }
 
-func RefreshUserAccessToken(githubToken models.GHToken) (models.GHToken, error) {
+// func RefreshUserAccessToken(githubToken *models.GHToken) (error) {
+// 	clientId := config.GetEnv("GITHUB_CLIENT_ID")
+// 	clientSecret := config.GetEnv("GITHUB_CLIENT_SECRET")
 
-	log.Println("get")
-	clientId := config.GetEnv("GITHUB_CLIENT_ID")
-	clientSecret := config.GetEnv("GITHUB_CLIENT_SECRET")
-	githubTokenURL := fmt.Sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&grant_type=refresh_token&refresh_token=%s", clientId, clientSecret, githubToken.RefreshToken)
+// 	githubTokenURL := fmt.Sprintf("https://github.com/login/oauth/access_token?client_id=%s&client_secret=%s&grant_type=refresh_token&refresh_token=%s", clientId, clientSecret, githubToken.RefreshToken)
 
-	reader := bytes.NewReader([]byte(""))
-	resp, err := http.Post(githubTokenURL, "application/json", reader)
-	if err != nil {
-		log.Panic(err)
-	}
+// 	reader := bytes.NewReader([]byte(""))
+// 	resp, err := http.Post(githubTokenURL, "application/json", reader)
+// 	if err != nil {
+// 		log.Panic(err)
+// 	}
 
-	// close response body
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			log.Panic(err)
-		}
-	}()
+// 	// close response body
+// 	defer func() {
+// 		err := resp.Body.Close()
+// 		if err != nil {
+// 			log.Panic(err)
+// 		}
+// 	}()
 
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Panic(err)
-	}
+// 	responseBody, err := io.ReadAll(resp.Body)
+// 	if err != nil {
+// 		log.Panic(err)
+// 	}
 
-	if resp.StatusCode >= 400 && resp.StatusCode <= 500 {
-		log.Println("Error response. Status Code: ", resp.StatusCode)
-	}
+// 	if resp.StatusCode >= 400 && resp.StatusCode <= 500 {
+// 		log.Println("Error response. Status Code: ", resp.StatusCode)
+// 	}
 
-	for _, kv := range strings.Split(string(responseBody), "&") {
-		key := strings.Split(kv, "=")[0]
-		value := strings.Split(kv, "=")[1]
+// 	for _, kv := range strings.Split(string(responseBody), "&") {
+// 		key := strings.Split(kv, "=")[0]
+// 		value := strings.Split(kv, "=")[1]
 
-		switch key {
-		case "access_token":
-			githubToken.AccessToken = value
-		case "expires_in":
-			if expiresIn, err := strconv.Atoi(value); err != nil {
-				githubToken.AccessTokenExpiresIn = time.Now().Add(time.Second * time.Duration(expiresIn))
-			} else {
-				githubToken.AccessTokenExpiresIn = time.Now().Add(time.Hour * 8)
-			}
-		case "refresh_token":
-			githubToken.RefreshToken = value
-		case "refresh_token_expires_in":
-			if expiresIn, err := strconv.Atoi(value); err != nil {
-				githubToken.RefreshTokenExpiresIn = time.Now().Add(time.Second * time.Duration(expiresIn))
-			} else {
-				githubToken.RefreshTokenExpiresIn = time.Now().Add(time.Hour * 8)
-			}
-		}
-	}
+// 		switch key {
+// 		case "access_token":
+// 			githubToken.AccessToken = value
+// 		case "expires_in":
+// 			if expiresIn, err := strconv.Atoi(value); err != nil {
+// 				githubToken.AccessTokenExpiresIn = time.Now().Add(time.Second * time.Duration(expiresIn))
+// 			} else {
+// 				githubToken.AccessTokenExpiresIn = time.Now().Add(time.Hour * 8)
+// 			}
+// 		case "refresh_token":
+// 			githubToken.RefreshToken = value
+// 		case "refresh_token_expires_in":
+// 			if expiresIn, err := strconv.Atoi(value); err != nil {
+// 				githubToken.RefreshTokenExpiresIn = time.Now().Add(time.Second * time.Duration(expiresIn))
+// 			} else {
+// 				githubToken.RefreshTokenExpiresIn = time.Now().Add(time.Hour * 8)
+// 			}
+// 		}
+// 	}
 
-	if err := database.DB.Save(githubToken).Error; err != nil {
-		return models.GHToken{}, err
-	}
+// 	if err := database.DB.Save(githubToken).Error; err != nil {
+// 		return err
+// 	}
 
-	return githubToken, err
-}
+// 	return nil
+// }
 
 func GetUserDetails(token, username string) (github.User, error) {
 	client := prepareClientWithToken(token)
